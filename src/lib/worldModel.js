@@ -7,6 +7,8 @@
  * FIX 4: Only vehicles are dynamic. Humans, poles, walls, and potholes are strictly STATIC (frozen positions, 0.0 m/s).
  */
 
+import { CONFIG } from './config.js';
+
 export class WorldModel {
   constructor() {
     this.totalLength = 320.0; // 320 meters track
@@ -22,6 +24,8 @@ export class WorldModel {
       { track_id: '09', name: 'POLE #09', class: 'static_pole', ui_class: 'Static Pole', stationS: 62.0, lateralOffset: 7.2, confidence: 0.94, is_dynamic: false },
       // Left Wall Boundary (x=-10.8m)
       { track_id: 'wall_1', name: 'WALL', class: 'static_wall', ui_class: 'Static Wall', stationS: 42.0, lateralOffset: -10.8, confidence: 0.98, is_dynamic: false },
+      // Tree #13 on Left Sidewalk (x=-8.5m)
+      { track_id: '13', name: 'TREE #13', class: 'static_tree', ui_class: 'Static Tree', stationS: 48.0, lateralOffset: -8.5, confidence: 0.92, is_dynamic: false },
 
       // Section 2: Pothole & Curb Section
       // Pole #14 on Left Sidewalk (x=-7.0m)
@@ -34,6 +38,8 @@ export class WorldModel {
       { track_id: '17', name: 'POLE #17', class: 'static_pole', ui_class: 'Static Pole', stationS: 126.0, lateralOffset: 7.2, confidence: 0.95, is_dynamic: false },
       // Curb Tag on Right Barrier (x=+5.8m)
       { track_id: 'curb', name: 'CURB', class: 'curb', ui_class: 'Curb', stationS: 130.0, lateralOffset: 5.8, confidence: 0.96, is_dynamic: false },
+      // Tree #20 on Left Sidewalk (x=-8.0m)
+      { track_id: '20', name: 'TREE #20', class: 'static_tree', ui_class: 'Static Tree', stationS: 98.0, lateralOffset: -8.0, confidence: 0.9, is_dynamic: false },
 
       // Section 3: Left Turn Intersection
       // Pole #22 on Left Sidewalk (x=-7.0m)
@@ -122,19 +128,16 @@ export class WorldModel {
     const loopS = ((s % this.totalLength) + this.totalLength) % this.totalLength;
     const road = this.getRoadCenter(loopS);
 
-    // Scenario name & base speed
+    // Scenario name & base speed (admin-editable via CONFIG.scenarioSpeedsKmh)
     let scenario = 'Urban Drive';
-    let speedKmh = 22.1;
     if (loopS > 80 && loopS <= 160) {
       scenario = 'Pothole Detection';
-      speedKmh = 20.4;
     } else if (loopS > 160 && loopS <= 250) {
       scenario = 'Left Turn';
-      speedKmh = 16.9;
     } else if (loopS > 250) {
       scenario = 'Dynamic Turn';
-      speedKmh = 18.5;
     }
+    const speedKmh = CONFIG.scenarioSpeedsKmh[scenario] ?? 20.0;
 
     // World to Road-Relative Projection for Dynamic Vehicles
     const toRoadRelativeCoords = (wx, wy, roadX, roadY, roadHeadingRad) => {
@@ -290,12 +293,12 @@ export class WorldModel {
         local_terrain_height_m: terrHeight
       },
       metrics: {
-        fps: Math.round(30 + Math.sin(timeSec) * 2),
-        latency_ms: Math.round(32 + Math.cos(timeSec) * 3),
-        miou: Number((87.5 + Math.sin(timeSec * 0.4) * 1.5).toFixed(1)),
-        grid_cells: Math.floor(13400 + Math.sin(timeSec * 0.8) * 600),
-        compute_savings_pct: Number((62.8 + Math.cos(timeSec * 0.5) * 1.2).toFixed(1)),
-        memory_mb: 432
+        fps: Math.round(CONFIG.metricsBaseline.fps + Math.sin(timeSec) * 2),
+        latency_ms: Math.round(CONFIG.metricsBaseline.latency_ms + Math.cos(timeSec) * 3),
+        miou: Number((CONFIG.metricsBaseline.miou + Math.sin(timeSec * 0.4) * 1.5).toFixed(1)),
+        grid_cells: Math.floor(CONFIG.metricsBaseline.grid_cells + Math.sin(timeSec * 0.8) * 600),
+        compute_savings_pct: Number((CONFIG.metricsBaseline.compute_savings_pct + Math.cos(timeSec * 0.5) * 1.2).toFixed(1)),
+        memory_mb: CONFIG.metricsBaseline.memory_mb
       }
     };
   }

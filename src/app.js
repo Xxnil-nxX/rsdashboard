@@ -3,16 +3,17 @@
  * High-FPS Continuous Simulation Engine using Continuous World Odometry Projection.
  */
 
-import { WORLD_MODEL } from './lib/worldModel.js';
-import { createHeader } from './components/Header.js';
-import { createSceneInfo } from './components/SceneInfo.js';
-import { createAdaptiveGridPanel } from './components/AdaptiveGridPanel.js';
-import { createSemanticLegend } from './components/SemanticLegend.js';
-import { createPerceptionMap } from './components/PerceptionMap.js';
-import { createEventsPanel } from './components/EventsPanel.js';
-import { createSelectedObject } from './components/SelectedObject.js';
-import { createElevationPanel } from './components/ElevationPanel.js';
-import { createMetricsBar } from './components/MetricsBar.js';
+import { WORLD_MODEL } from './lib/worldModel.js?v=5';
+import { CONFIG, onConfigChange } from './lib/config.js?v=5';
+import { createHeader } from './components/Header.js?v=5';
+import { createSceneInfo } from './components/SceneInfo.js?v=5';
+import { createAdaptiveGridPanel } from './components/AdaptiveGridPanel.js?v=5';
+import { createSemanticLegend } from './components/SemanticLegend.js?v=5';
+import { createPerceptionMap } from './components/PerceptionMap.js?v=5';
+import { createEventsPanel } from './components/EventsPanel.js?v=5';
+import { createSelectedObject } from './components/SelectedObject.js?v=5';
+import { createElevationPanel } from './components/ElevationPanel.js?v=5';
+import { createMetricsBar } from './components/MetricsBar.js?v=5';
 
 class DashboardApp {
   constructor() {
@@ -33,6 +34,12 @@ class DashboardApp {
 
     this.initComponents();
     this.start60FpsRenderLoop();
+
+    // Admin console edits (this tab or another) land in CONFIG live; re-render
+    // the panels that don't already refresh every frame.
+    onConfigChange(() => {
+      this.adaptiveGrid.update();
+    });
   }
 
   initComponents() {
@@ -107,30 +114,11 @@ class DashboardApp {
 
   updateElevationForObject(obj, defaultElev) {
     if (!obj) return;
-    if (obj.class === 'pothole') {
+    const byClass = CONFIG.elevationByClass[obj.class];
+    if (byClass) {
       this.elevationPanel.update({
-        selected_cell_height_m: -0.22,
-        local_terrain_height_m: -0.18
-      });
-    } else if (obj.class === 'dynamic_vehicle') {
-      this.elevationPanel.update({
-        selected_cell_height_m: 0.12,
-        local_terrain_height_m: 0.03
-      });
-    } else if (obj.class === 'dynamic_human') {
-      this.elevationPanel.update({
-        selected_cell_height_m: 0.05,
-        local_terrain_height_m: 0.03
-      });
-    } else if (obj.class === 'static_wall') {
-      this.elevationPanel.update({
-        selected_cell_height_m: 1.20,
-        local_terrain_height_m: 0.05
-      });
-    } else if (obj.class === 'static_pole') {
-      this.elevationPanel.update({
-        selected_cell_height_m: 0.95,
-        local_terrain_height_m: 0.04
+        selected_cell_height_m: byClass.selected,
+        local_terrain_height_m: byClass.terrain
       });
     } else {
       this.elevationPanel.update(defaultElev);
@@ -143,9 +131,8 @@ class DashboardApp {
       this.lastFrameTime = now;
 
       if (!this.isPaused) {
-        // Speed in m/s (20 km/h ~ 5.5 m/s)
-        const speedMps = 5.8;
-        this.distanceTraveled += speedMps * deltaSec * this.playbackSpeed;
+        // Admin-editable base speed (CONFIG.egoSpeedMps), scaled by the playback control
+        this.distanceTraveled += CONFIG.egoSpeedMps * deltaSec * this.playbackSpeed;
 
         // Dynamic event log trigger as vehicle passes landmarks
         if (this.distanceTraveled - this.lastEventS > 35.0) {
