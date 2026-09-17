@@ -884,7 +884,7 @@ function drawPerceptionEntities(ctx, egoBaseX, egoBaseY, scale, objects, selecte
       ctx.fill();
 
       ctx.restore();
-    } else if (obj.class === 'static_tree' || obj.class === 'tree') {
+    } else if (obj.class === 'static_tree' || obj.class === 'static_obstacle_tree' || obj.class === 'tree') {
       // ─── TREE ICON: Small compact canopy + trunk silhouette ───
       ctx.save();
       ctx.translate(ox, oy);
@@ -1091,7 +1091,7 @@ function updateOverlayCallouts(overlayLayer, egoBaseX, egoBaseY, scale, objects,
       headerColor = '#ef4444';
       offsetX = 18;
       offsetY = -24;
-    } else if (obj.class === 'static_tree' || obj.class === 'tree') {
+    } else if (obj.class === 'static_tree' || obj.class === 'static_obstacle_tree' || obj.class === 'tree') {
       borderClass = 'border-green text-green';
       headerColor = '#00e676';
       offsetX = 18;
